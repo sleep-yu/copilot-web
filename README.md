@@ -9,19 +9,29 @@ copilot-mini 的纯前端聊天界面，基于 React + TypeScript + Vite。
 | React 19 | UI 框架 |
 | TypeScript | 类型安全 |
 | Vite | 构建工具 |
-| WebSocket | 与后端通信 |
+| HTTP POST | 与后端通信 |
 
 ## 项目目的
 
-为 `copilot-mini` 后端（WebSocket 接口）开发一个轻量级的纯前端聊天界面，便于：
+为 `copilot-mini` 后端开发一个轻量级的纯前端聊天界面，便于：
 - 与 AI 进行实时对话
 - 后续扩展和定制
 
 ## 后端对接
 
-- **后端地址**: `ws://localhost:62345/copilot/hook`
-- **通信协议**: WebSocket
-- **数据格式**: JSON
+- **后端地址**: `http://localhost:62345/copilot/hook`
+- **通信协议**: HTTP POST
+- **请求体**:
+  ```json
+  {
+    "sessionId": "web-client",
+    "data": {
+      "fromUser": "user_001",
+      "type": "text",
+      "content": "消息内容"
+    }
+  }
+  ```
 
 ## 开发指南
 
@@ -40,6 +50,8 @@ npm run build
 
 ### 2026-03-21
 
+- **feat**: 实现基础聊天界面，对接 HTTP POST 接口
+- **commit**: edf4a61 - feat: 实现基础聊天界面，对接 HTTP POST 接口
 - **feat**: 初始化项目，克隆仓库并配置 Vite + React + TypeScript 环境
 - **commit**: 7e7592e - feat: 初始化 Vite + React + TypeScript 项目
 
