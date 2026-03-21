@@ -60,21 +60,20 @@ function App() {
       console.log('后端返回:', result)
 
       // 处理后端返回的消息
-      let assistantContent = '收到消息: ' + userMessage.content
+      let assistantContent = '无回复'
       
-      // 根据后端返回结构提取AI回复
-      if (result.messages && Array.isArray(result.messages)) {
-        const aiMessages = result.messages
+      // 正确解析后端返回结构：result.data.messages
+      const messagesData = result.data?.messages || result.messages || []
+      if (Array.isArray(messagesData) && messagesData.length > 0) {
+        const aiMessages = messagesData
           .filter((m: any) => m.fromUser === 'system' && m.content)
           .map((m: any) => m.content)
         if (aiMessages.length > 0) {
           assistantContent = aiMessages.join('\n')
         }
-      } else if (result.data) {
-        // 兼容其他返回结构
-        assistantContent = typeof result.data === 'string' 
-          ? result.data 
-          : JSON.stringify(result.data, null, 2)
+      } else if (result.data?.msgId) {
+        // 后端返回了 msgId 说明成功
+        assistantContent = '消息已收到'
       }
 
       const assistantMessage: Message = {
