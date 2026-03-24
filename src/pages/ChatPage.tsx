@@ -118,9 +118,14 @@ export function ChatPage() {
       const result = await response.json()
 
       let assistantContent = '无回复'
-      const messagesData = result.data?.messages || result.messages || []
-      if (Array.isArray(messagesData) && messagesData.length > 0) {
-        const aiMessages = messagesData
+      
+      // 优先从 result.data.data 获取（我们的 API 格式）
+      const apiData = result.data?.data
+      if (apiData?.assistant?.content) {
+        assistantContent = apiData.assistant.content
+      } else if (Array.isArray(apiData?.messages) && apiData.messages.length > 0) {
+        // 兼容其他格式
+        const aiMessages = apiData.messages
           .filter((m: any) => m.fromUser === 'system' && m.content)
           .map((m: any) => m.content)
         if (aiMessages.length > 0) {
