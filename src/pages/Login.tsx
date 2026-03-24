@@ -10,8 +10,8 @@ export function Login() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  
-  const { login } = useAuth()
+
+  const { login, toggleTheme } = useAuth()
   const navigate = useNavigate()
 
   const handleSubmit = async (e: FormEvent) => {
@@ -36,6 +36,7 @@ export function Login() {
   return (
     <div className="auth-page">
       <div className="auth-card">
+        <button type="button" className="auth-theme-toggle" onClick={toggleTheme} aria-label="切换主题" />
         <div className="auth-header">
           <div className="auth-logo">
             <svg viewBox="0 0 24 24">
@@ -48,34 +49,50 @@ export function Login() {
 
         <form className="auth-form" onSubmit={handleSubmit}>
           {error && <div className="auth-error">{error}</div>}
-          
+
           <div className="form-group">
             <label htmlFor="email">邮箱</label>
-            <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="your@email.com"
-              required
-            />
+            <div className="input-wrapper-icon">
+              <span className="input-icon">
+                <svg viewBox="0 0 24 24">
+                  <rect x="2" y="4" width="20" height="16" rx="2"/>
+                  <path d="M2 7l10 6 10-6"/>
+                </svg>
+              </span>
+              <input
+                type="email"
+                id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="your@email.com"
+                required
+              />
+            </div>
           </div>
 
           <div className="form-group">
             <label htmlFor="password">密码</label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="输入密码"
-              required
-              minLength={6}
-            />
+            <div className="input-wrapper-icon">
+              <span className="input-icon">
+                <svg viewBox="0 0 24 24">
+                  <rect x="3" y="11" width="18" height="11" rx="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+              </span>
+              <input
+                type="password"
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="输入密码"
+                required
+                minLength={6}
+              />
+            </div>
           </div>
 
           <button type="submit" className="auth-btn" disabled={isLoading}>
-            {isLoading ? '登录中...' : '登录'}
+            {isLoading ? <><span className="btn-spinner" />登录中...</> : '登录'}
           </button>
         </form>
 

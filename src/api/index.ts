@@ -51,13 +51,20 @@ async function request<T>(
     },
   })
 
-  const result: ApiResponse<T> = await response.json()
+  const result = await response.json()
 
-  if (result.code !== 0) {
-    throw new ApiError(result.message, result.code)
+  // 后端返回格式：{ errorCode: number, data: { code, message, data }, message?, data? }
+  // errorCode > 0 表示业务错误
+  if (result.errorCode !== 0) {
+    throw new ApiError(result.message || '请求失败', result.errorCode || 500)
   }
 
-  return result.data
+  // 业务 code 不为 0 也算错误
+  if (result.data?.code !== 0) {
+    throw new ApiError(result.data?.message || '请求失败', result.data?.code || 400)
+  }
+
+  return result.data?.data
 }
 
 // GET 请求

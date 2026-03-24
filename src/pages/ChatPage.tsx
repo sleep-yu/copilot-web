@@ -17,10 +17,10 @@ import {
 } from '../api/session'
 import './ChatPage.css'
 
-const API_URL = 'http://localhost:62345/copilot/hook'
+const API_BASE_URL = 'http://localhost:62345'
 
 export function ChatPage() {
-  const { user, logout } = useAuth()
+  const { user, logout, theme, toggleTheme } = useAuth()
   const [sessions, setSessions] = useState<SessionListItem[]>([])
   const [currentSession, setCurrentSession] = useState<Session | null>(null)
   const [input, setInput] = useState('')
@@ -102,25 +102,30 @@ export function ChatPage() {
     }
 
     try {
-      const response = await fetch(API_URL, {
+      const token = localStorage.getItem('copilot_token')
+      const response = await fetch(`${API_BASE_URL}/api/sessions/${currentSession.id}/messages`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
         body: JSON.stringify({
-          sessionId: 'web-client-' + Date.now(),
-          data: {
-            fromUser: 'user_001',
-            type: 'text',
-            content: userMessage.content
-          }
+          role: 'user',
+          content: userMessage.content
         })
       })
 
       const result = await response.json()
 
       let assistantContent = '无回复'
-      const messagesData = result.data?.messages || result.messages || []
-      if (Array.isArray(messagesData) && messagesData.length > 0) {
-        const aiMessages = messagesData
+      
+      // 优先从 result.data.data 获取（我们的 API 格式）
+      const apiData = result.data?.data
+      if (apiData?.assistant?.content) {
+        assistantContent = apiData.assistant.content
+      } else if (Array.isArray(apiData?.messages) && apiData.messages.length > 0) {
+        // 兼容其他格式
+        const aiMessages = apiData.messages
           .filter((m: any) => m.fromUser === 'system' && m.content)
           .map((m: any) => m.content)
         if (aiMessages.length > 0) {
@@ -327,6 +332,11 @@ export function ChatPage() {
               </svg>
             </button>
             <h1 className="header-title">{currentSession?.title || 'Copilot'}</h1>
+          </div>
+          <div className="header-right">
+            <button className="theme-toggle-btn" onClick={toggleTheme} title="切换主题">
+              {theme === 'light' ? '🌙' : '☀️'}
+            </button>
           </div>
         </header>
 
