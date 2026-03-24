@@ -52,5 +52,5 @@ export async function getCurrentUser(): Promise<UserInfo> {
 
 // 登出
 export async function logout(): Promise<void> {
-  return post<void>('/api/auth/logout')
+  return post<{ message: string }>('/api/auth/logout')
 }

@@ -8,6 +8,7 @@ import './Auth.css'
 export function Register() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [nickname, setNickname] = useState('')
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -18,6 +19,13 @@ export function Register() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
+    
+    // 校验密码一致性
+    if (password !== confirmPassword) {
+      setError('两次输入的密码不一致')
+      return
+    }
+    
     setIsLoading(true)
 
     try {
@@ -83,6 +91,19 @@ export function Register() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="至少 6 位"
+              required
+              minLength={6}
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="confirmPassword">确认密码</label>
+            <input
+              type="password"
+              id="confirmPassword"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="再次输入密码"
               required
               minLength={6}
             />
