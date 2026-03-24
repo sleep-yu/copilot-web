@@ -45,6 +45,35 @@
     0 0 0 1px rgba(255, 255, 255, 0.03);
 }
 
+.auth-theme-toggle {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: transparent;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.auth-theme-toggle::after {
+  content: '🌙';
+}
+
+[data-theme="light"] .auth-theme-toggle::after {
+  content: '☀️';
+}
+
+.auth-theme-toggle:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="dark"] .auth-theme-toggle:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
 @keyframes cardIn {
   from {
     opacity: 0;

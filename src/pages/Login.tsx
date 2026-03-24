@@ -11,7 +11,7 @@ export function Login() {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
-  const { login } = useAuth()
+  const { login, toggleTheme } = useAuth()
   const navigate = useNavigate()
 
   const handleSubmit = async (e: FormEvent) => {
@@ -36,6 +36,7 @@ export function Login() {
   return (
     <div className="auth-page">
       <div className="auth-card">
+        <button type="button" className="auth-theme-toggle" onClick={toggleTheme} aria-label="切换主题" />
         <div className="auth-header">
           <div className="auth-logo">
             <svg viewBox="0 0 24 24">
