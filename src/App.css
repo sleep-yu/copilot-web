@@ -93,6 +93,7 @@ body {
 .sidebar-header {
   padding: 12px;
   border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
 }
 
 .new-chat-btn {
@@ -226,6 +227,7 @@ body {
 .sidebar-footer {
   padding: 12px;
   border-top: 1px solid var(--border-color);
+  flex-shrink: 0;
 }
 
 .sidebar-footer-item {
