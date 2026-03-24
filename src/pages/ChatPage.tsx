@@ -17,7 +17,7 @@ import {
 } from '../api/session'
 import './ChatPage.css'
 
-const API_URL = 'http://localhost:62345/copilot/hook'
+const API_BASE_URL = 'http://localhost:62345'
 
 export function ChatPage() {
   const { user, logout } = useAuth()
@@ -102,16 +102,12 @@ export function ChatPage() {
     }
 
     try {
-      const response = await fetch(API_URL, {
+      const response = await fetch(`${API_BASE_URL}/api/sessions/${currentSession.id}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          sessionId: 'web-client-' + Date.now(),
-          data: {
-            fromUser: 'user_001',
-            type: 'text',
-            content: userMessage.content
-          }
+          role: 'user',
+          content: userMessage.content
         })
       })
 
