@@ -7,6 +7,8 @@ interface AuthContextType {
   user: UserInfo | null
   isLoading: boolean
   isAuthenticated: boolean
+  theme: 'light' | 'dark'
+  toggleTheme: () => void
   login: (email: string, password: string) => Promise<void>
   register: (email: string, password: string, nickname?: string) => Promise<void>
   logout: () => Promise<void>
@@ -18,6 +20,24 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<UserInfo | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    return (localStorage.getItem('theme') as 'light' | 'dark') || 'light'
+  })
+
+  // 主题初始化
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme)
+  }, [theme])
+
+  // 切换主题
+  const toggleTheme = useCallback(() => {
+    setTheme((prev) => {
+      const next = prev === 'light' ? 'dark' : 'light'
+      localStorage.setItem('theme', next)
+      document.documentElement.setAttribute('data-theme', next)
+      return next
+    })
+  }, [])
 
   // 检查登录状态
   const checkAuth = useCallback(async () => {
@@ -80,6 +100,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         isLoading,
         isAuthenticated: !!user,
+        theme,
+        toggleTheme,
         login,
         register,
         logout,
