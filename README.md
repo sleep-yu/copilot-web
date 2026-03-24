@@ -261,4 +261,49 @@ location.reload()
 
 ---
 
+## 登录注册模块
+
+### 后端接口
+
+| 接口 | 方法 | 说明 |
+|------|------|------|
+| `/api/auth/register` | POST | 注册（需要 email, password, nickname） |
+| `/api/auth/login` | POST | 登录（需要 email, password） |
+| `/api/auth/me` | GET | 获取当前用户信息 |
+| `/api/auth/logout` | POST | 登出 |
+
+### 前端配置
+
+- **前端地址**: `http://localhost:5173`
+- **后端地址**: `http://localhost:62345`
+- **API Base URL**: `http://localhost:62345`（可通过 `VITE_API_BASE_URL` 修改）
+
+### 登录注册流程
+
+1. 打开前端 `/login` 页面
+2. 注册新账号 → 调用后端 `/api/auth/register`
+3. 注册成功后自动登录 → 调用 `/api/auth/login`
+4. 跳转到首页 `/`
+5. 刷新页面验证登录状态保持
+
+### 依赖服务
+
+- **MongoDB**: `mongodb://localhost:27017/copilot`
+- **后端**: `npm run dev`（端口 62345）
+
+### 启动顺序
+
+```bash
+# 1. 启动 MongoDB
+brew services start mongodb-community
+
+# 2. 启动后端
+cd ../copilot-mini && npm run dev
+
+# 3. 启动前端
+cd copilot-web && npm run dev
+```
+
+---
+
 > 🚀 祝你开发愉快！
