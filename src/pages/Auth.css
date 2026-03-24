@@ -65,18 +65,19 @@
 .auth-logo {
   width: 56px;
   height: 56px;
-  background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
+  background: linear-gradient(135deg, #059669, #10b981);
   border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto 20px;
   color: white;
-  box-shadow: 0 4px 14px -2px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 14px -2px rgba(5, 150, 105, 0.35);
 }
 
 [data-theme="dark"] .auth-logo {
-  box-shadow: 0 4px 14px -2px rgba(0, 0, 0, 0.4);
+  background: linear-gradient(135deg, #34d399, #10b981);
+  box-shadow: 0 4px 14px -2px rgba(52, 211, 153, 0.3);
 }
 
 .auth-logo svg {
@@ -260,7 +261,11 @@
 
 .auth-btn:hover:not(:disabled) {
   transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 8px 20px -4px rgba(5, 150, 105, 0.4);
+}
+
+[data-theme="dark"] .auth-btn:hover:not(:disabled) {
+  box-shadow: 0 8px 20px -4px rgba(52, 211, 153, 0.35);
 }
 
 .auth-btn:hover:not(:disabled)::after {
