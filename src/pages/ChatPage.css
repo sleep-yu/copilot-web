@@ -59,3 +59,28 @@
   background: var(--bg-secondary);
   color: var(--text-primary);
 }
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.theme-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 18px;
+  transition: background 0.15s ease;
+}
+
+.theme-toggle-btn:hover {
+  background: var(--bg-secondary);
+}

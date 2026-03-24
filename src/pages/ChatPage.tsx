@@ -20,7 +20,7 @@ import './ChatPage.css'
 const API_BASE_URL = 'http://localhost:62345'
 
 export function ChatPage() {
-  const { user, logout } = useAuth()
+  const { user, logout, theme, toggleTheme } = useAuth()
   const [sessions, setSessions] = useState<SessionListItem[]>([])
   const [currentSession, setCurrentSession] = useState<Session | null>(null)
   const [input, setInput] = useState('')
@@ -102,9 +102,13 @@ export function ChatPage() {
     }
 
     try {
+      const token = localStorage.getItem('copilot_token')
       const response = await fetch(`${API_BASE_URL}/api/sessions/${currentSession.id}/messages`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
         body: JSON.stringify({
           role: 'user',
           content: userMessage.content
@@ -323,6 +327,11 @@ export function ChatPage() {
               </svg>
             </button>
             <h1 className="header-title">{currentSession?.title || 'Copilot'}</h1>
+          </div>
+          <div className="header-right">
+            <button className="theme-toggle-btn" onClick={toggleTheme} title="切换主题">
+              {theme === 'light' ? '🌙' : '☀️'}
+            </button>
           </div>
         </header>
 
