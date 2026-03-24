@@ -228,7 +228,7 @@
 .auth-btn {
   margin-top: 8px;
   padding: 14px 24px;
-  background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
+  background: linear-gradient(135deg, #10b981, #059669) !important;
   border: none;
   border-radius: 12px;
   color: white;
@@ -251,7 +251,7 @@
   inset: 0;
   background: linear-gradient(
     135deg,
-    rgba(255, 255, 255, 0.15) 0%,
+    rgba(255, 255, 255, 0.2) 0%,
     transparent 50%,
     transparent 100%
   );
@@ -261,11 +261,15 @@
 
 .auth-btn:hover:not(:disabled) {
   transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 8px 20px -4px rgba(5, 150, 105, 0.4);
+  box-shadow: 0 8px 20px -4px rgba(5, 150, 105, 0.5);
+}
+
+[data-theme="dark"] .auth-btn {
+  background: linear-gradient(135deg, #34d399, #10b981);
 }
 
 [data-theme="dark"] .auth-btn:hover:not(:disabled) {
-  box-shadow: 0 8px 20px -4px rgba(52, 211, 153, 0.35);
+  box-shadow: 0 8px 20px -4px rgba(52, 211, 153, 0.4);
 }
 
 .auth-btn:hover:not(:disabled)::after {
