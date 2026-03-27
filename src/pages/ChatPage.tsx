@@ -52,15 +52,15 @@ export function ChatPage() {
         const session = await getSession(data.sessions[0].id)
         setCurrentSession(session)
       } else {
-        // 创建新会话
-        const newSession = await createSession({ title: '新对话' })
+        // 创建空会话，不设置标题，等发送消息时再设置
+        const newSession = await createSession()
         setCurrentSession(newSession)
       }
     } catch (error) {
       console.error('加载会话失败:', error)
-      // 创建新会话作为后备
+      // 创建空会话作为后备
       try {
-        const newSession = await createSession({ title: '新对话' })
+        const newSession = await createSession()
         setCurrentSession(newSession)
       } catch {}
     }
@@ -82,7 +82,11 @@ export function ChatPage() {
 
   // 发送消息
   const sendMessage = async () => {
-    if (!input.trim() || isLoading || !currentSession) return
+    console.log('【DEBUG】sendMessage 被调用, input:', input)
+    if (!input.trim() || isLoading || !currentSession) {
+      console.log('【DEBUG】提前退出：input为空或正在加载或无会话')
+      return
+    }
 
     const userMessage: Message = {
       id: 'msg-' + Date.now(),
@@ -121,15 +125,22 @@ export function ChatPage() {
       }
 
       const finalMessages = [...newMessages, assistantMessage]
-      setCurrentSession({ ...currentSession, messages: finalMessages })
+      // 保存标题内容（因为 input 后续会被清空）
+      const newTitle = userMessage.content.slice(0, 20) || '新对话'
+      setCurrentSession({ ...currentSession, messages: finalMessages, title: newTitle })
 
       // 更新会话标题（第一条用户消息后）
+      console.log('【DEBUG】newMessages.length:', newMessages.length, 'input已被清空为:', input)
       if (newMessages.length === 1) {
-        const title = input.trim().slice(0, 20)
+        console.log('【DEBUG】即将调用 updateSession，标题:', newTitle)
         try {
-          await updateSession(currentSession.id, { title })
+          await updateSession(currentSession.id, { title: newTitle })
+          console.log('【DEBUG】标题更新成功')
           await loadSessions()
-        } catch {}
+          console.log('【DEBUG】会话列表已刷新')
+        } catch (err) {
+          console.error('【DEBUG】标题更新失败:', err)
+        }
       }
     } catch (error) {
       console.error('请求失败:', error)
@@ -197,7 +208,8 @@ export function ChatPage() {
   // 新建会话
   const handleNewChat = async () => {
     try {
-      const newSession = await createSession({ title: '新对话' })
+      // 创建空会话，标题在发送消息时设置
+      const newSession = await createSession()
       setCurrentSession(newSession)
       await loadSessions()
       setSidebarOpen(false)
@@ -273,7 +285,7 @@ export function ChatPage() {
               <div className="sidebar-section" key={date}>
                 <div className="sidebar-section-title">{date}</div>
                 {sessionList.map(session => (
-                  <button
+                  <div
                     key={session.id}
                     className={`sidebar-item ${currentSession?.id === session.id ? 'active' : ''}`}
                     onClick={() => handleSelectSession(session.id)}
@@ -282,12 +294,12 @@ export function ChatPage() {
                       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" strokeLinecap="round" strokeLinejoin="round"/>
                     </svg>
                     <span>{session.title}</span>
-                    <button className="sidebar-item-delete" onClick={(e) => handleDeleteSession(e, session.id)}>
+                    <span className="sidebar-item-delete" onClick={(e) => handleDeleteSession(e, session.id)}>
                       <svg viewBox="0 0 24 24">
                         <path d="M18 6L6 18M6 6l12 12" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
-                    </button>
-                  </button>
+                    </span>
+                  </div>
                 ))}
               </div>
             ))
