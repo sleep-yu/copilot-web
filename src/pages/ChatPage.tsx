@@ -11,13 +11,12 @@ import {
   getSession,
   updateSession,
   deleteSession,
+  addMessage,
   type Session,
   type Message,
   type SessionListItem,
 } from '../api/session'
 import './ChatPage.css'
-
-const API_BASE_URL = 'http://localhost:62345'
 
 export function ChatPage() {
   const { user, logout, theme, toggleTheme } = useAuth()
@@ -102,35 +101,16 @@ export function ChatPage() {
     }
 
     try {
-      const token = localStorage.getItem('copilot_token')
-      const response = await fetch(`${API_BASE_URL}/api/sessions/${currentSession.id}/messages`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { Authorization: `Bearer ${token}` }),
-        },
-        body: JSON.stringify({
-          role: 'user',
-          content: userMessage.content
-        })
+      // 调用封装好的 addMessage API
+      const result = await addMessage(currentSession.id, {
+        role: 'user',
+        content: userMessage.content
       })
 
-      const result = await response.json()
-
+      // 提取 AI 回复内容
       let assistantContent = '无回复'
-      
-      // 优先从 result.data.data 获取（我们的 API 格式）
-      const apiData = result.data?.data
-      if (apiData?.assistant?.content) {
-        assistantContent = apiData.assistant.content
-      } else if (Array.isArray(apiData?.messages) && apiData.messages.length > 0) {
-        // 兼容其他格式
-        const aiMessages = apiData.messages
-          .filter((m: any) => m.fromUser === 'system' && m.content)
-          .map((m: any) => m.content)
-        if (aiMessages.length > 0) {
-          assistantContent = aiMessages.join('\n')
-        }
+      if (result.assistant?.content) {
+        assistantContent = result.assistant.content
       }
 
       const assistantMessage: Message = {

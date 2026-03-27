@@ -10,7 +10,7 @@ interface AuthContextType {
   theme: 'light' | 'dark'
   toggleTheme: () => void
   login: (email: string, password: string) => Promise<void>
-  register: (email: string, password: string, nickname?: string) => Promise<void>
+  registerWithToken: (email: string, password: string, nickname?: string) => Promise<void>
   logout: () => Promise<void>
   checkAuth: () => Promise<void>
 }
@@ -77,10 +77,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(result.user)
   }, [])
 
-  // 注册
-  const register = useCallback(async (email: string, password: string, nickname?: string) => {
+  // 注册（返回 token，直接完成登录）
+  const registerWithToken = useCallback(async (email: string, password: string, nickname?: string) => {
     const { register: registerApi } = await import('../api/auth')
-    await registerApi({ email, password, nickname })
+    const { setToken } = await import('../api')
+    
+    // 后端现在直接返回 token，无需再调用 login
+    const result = await registerApi({ email, password, nickname })
+    setToken(result.token)
+    setUser({
+      userId: result.userId,
+      email: result.email,
+      nickname: result.nickname,
+    })
   }, [])
 
   // 登出
@@ -103,7 +112,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         theme,
         toggleTheme,
         login,
-        register,
+        registerWithToken,
         logout,
         checkAuth,
       }}

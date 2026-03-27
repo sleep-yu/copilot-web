@@ -80,12 +80,18 @@ export async function deleteSession(id: string): Promise<void> {
   return del<void>(`/api/sessions/${id}`)
 }
 
+// 添加消息响应类型（用户消息会同时返回 AI 回复）
+export interface AddMessageResponse {
+  user: Message
+  assistant?: Message  // 用户消息时返回，助手消息时不返回
+}
+
 // 添加消息
 export async function addMessage(
   sessionId: string,
   data: { role: 'user' | 'assistant'; content: string }
-): Promise<Message> {
-  return post<Message>(`/api/sessions/${sessionId}/messages`, data)
+): Promise<AddMessageResponse> {
+  return post<AddMessageResponse>(`/api/sessions/${sessionId}/messages`, data)
 }
 
 // 清空消息

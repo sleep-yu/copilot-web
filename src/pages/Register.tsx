@@ -13,7 +13,7 @@ export function Register() {
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
 
-  const { register, login } = useAuth()
+  const { registerWithToken, toggleTheme } = useAuth()
   const navigate = useNavigate()
 
   const handleSubmit = async (e: FormEvent) => {
@@ -29,9 +29,8 @@ export function Register() {
     setIsLoading(true)
 
     try {
-      await register(email, password, nickname || undefined)
-      // 注册成功后自动登录
-      await login(email, password)
+      // 注册成功后直接设置 token，无需再调用登录
+      await registerWithToken(email, password, nickname || undefined)
       navigate('/')
     } catch (err) {
       if (err instanceof ApiError) {
@@ -47,6 +46,7 @@ export function Register() {
   return (
     <div className="auth-page">
       <div className="auth-card">
+        <button type="button" className="auth-theme-toggle" onClick={toggleTheme} aria-label="切换主题" />
         <div className="auth-header">
           <div className="auth-logo">
             <svg viewBox="0 0 24 24">

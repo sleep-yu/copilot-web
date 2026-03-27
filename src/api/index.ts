@@ -54,17 +54,15 @@ async function request<T>(
   const result = await response.json()
 
   // 后端返回格式：{ errorCode: number, data: { code, message, data }, message?, data? }
-  // errorCode > 0 表示业务错误
-  if (result.errorCode !== 0) {
-    throw new ApiError(result.message || '请求失败', result.errorCode || 500)
+  // 统一错误检查：外层 errorCode > 0 或内层 data.code !== 0 都算错误
+  const errorCode = result.errorCode ?? result.data?.code
+  const errorMessage = result.message || result.data?.message || '请求失败'
+  
+  if (errorCode !== 0) {
+    throw new ApiError(errorMessage, errorCode || 500)
   }
 
-  // 业务 code 不为 0 也算错误
-  if (result.data?.code !== 0) {
-    throw new ApiError(result.data?.message || '请求失败', result.data?.code || 400)
-  }
-
-  return result.data?.data
+  return result.data?.data ?? result.data
 }
 
 // GET 请求

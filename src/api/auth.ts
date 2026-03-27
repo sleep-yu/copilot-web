@@ -22,11 +22,12 @@ export interface LoginRequest {
   password: string
 }
 
-// 注册响应
+// 注册响应（后端直接返回 token）
 export interface RegisterResponse {
   userId: string
   email: string
   nickname?: string
+  token: string  // 新增：注册后直接返回 token
 }
 
 // 登录响应
