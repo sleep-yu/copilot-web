@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll } from 'vitest'
 
 const API_BASE = 'http://localhost:62345'
 
-interface ApiResponse<T = unknown> {
+interface ApiResponse<T = any> {
   errorCode: number
   data?: {
     code: number

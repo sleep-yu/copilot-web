@@ -7,7 +7,7 @@
  *   npx vitest run src/__tests__/
  */
 
-import { describe, test, expect, vi, beforeEach } from 'vitest'
+import { describe, test, expect, vi } from 'vitest'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
 import { Login } from '../pages/Login'
@@ -56,13 +56,12 @@ describe('【登录页面】UI 渲染', () => {
 describe('【登录页面】表单验证', () => {
   test('TC-FRONT-LOGIN-003: 空表单提交 - 显示浏览器原生验证', async () => {
     renderWithRouter(<Login />)
-    const form = screen.getByRole('form') || screen.getByTestId('login-form')
-    
+
     // 空表单提交应触发 HTML5 原生验证
     const submitBtn = screen.getByRole('button', { name: /登录/ })
     // 因为 input 有 required 属性，直接 click submit 应该不触发提交
     fireEvent.click(submitBtn)
-    
+
     // 验证邮箱 input 有 required 属性
     const emailInput = screen.getByLabelText(/邮箱/)
     expect(emailInput).toHaveAttribute('required')
@@ -153,11 +152,9 @@ describe('【认证上下文】AuthContext', () => {
   test('TC-FRONT-AUTH-001: 未登录时 user 为 null', () => {
     // 清除 localStorage
     localStorage.clear()
-    
-    let capturedUser: unknown
+
     const TestComponent = () => {
       const { user } = require('../context/AuthContext').useAuth()
-      capturedUser = user
       return <div>{user === null ? '未登录' : '已登录'}</div>
     }
 
@@ -236,7 +233,7 @@ describe('【聊天页面】UI 渲染', () => {
 
     return waitFor(() => {
       expect(screen.getByPlaceholderText(/输入消息/)).toBeTruthy()
-      expect(screen.getByRole('button', /发送/)).toBeTruthy()
+      expect(screen.getByRole('button', { name: /发送/ })).toBeTruthy()
     })
   })
 
@@ -252,7 +249,7 @@ describe('【聊天页面】UI 渲染', () => {
     renderWithAuth(<ChatPage />)
 
     return waitFor(() => {
-      const sendBtn = screen.getByRole('button', /发送/)
+      const sendBtn = screen.getByRole('button', { name: /发送/ })
       expect(sendBtn).toBeDisabled()
     })
   })
@@ -344,8 +341,8 @@ describe('【聊天页面】输入框交互', () => {
 
     await waitFor(() => {
       const textarea = screen.getByPlaceholderText(/输入消息/)
-      const sendBtn = screen.getByRole('button', /发送/)
-      
+      const sendBtn = screen.getByRole('button', { name: /发送/ })
+
       fireEvent.change(textarea, { target: { value: '你好' } })
       
       expect(sendBtn).not.toBeDisabled()
@@ -353,8 +350,6 @@ describe('【聊天页面】输入框交互', () => {
   })
 
   test('TC-FRONT-CHAT-008: Enter 键触发发送（无 Shift）', async () => {
-    const mockSendMessage = vi.fn()
-    
     vi.mock('../api/session', () => ({
       getSessions: vi.fn().mockResolvedValue({ sessions: [], pagination: { page: 1, pageSize: 20, total: 0 } }),
       createSession: vi.fn().mockResolvedValue({ id: 's1', title: '新对话', messages: [] }),
@@ -389,39 +384,39 @@ describe('【API 工具】统一响应处理', () => {
       ok: true,
       json: () => Promise.resolve({ code: 400, message: '邮箱已注册', data: null }),
     })
-    global.fetch = mockFetch
+    globalThis.fetch = mockFetch
 
     const { ApiError, get } = await import('../api/index')
-    
+
     try {
       await get('/api/auth/register')
       expect(true).toBe(false) // 不应到达这里
     } catch (e) {
       expect(e).toBeInstanceOf(ApiError)
-      expect((e as ApiError).message).toBe('邮箱已注册')
-      expect((e as ApiError).code).toBe(400)
+      expect((e as InstanceType<typeof ApiError>).message).toBe('邮箱已注册')
+      expect((e as InstanceType<typeof ApiError>).code).toBe(400)
     }
   })
 
   test('TC-FRONT-API-002: Token 自动附加到请求头', async () => {
     localStorage.setItem('copilot_token', 'test_token_123')
-    
-    let capturedHeaders: Headers
-    const mockFetch = vi.fn().mockImplementation((url, options) => {
+
+    let capturedHeaders: Headers | undefined
+    const mockFetch = vi.fn().mockImplementation((_url, options) => {
       capturedHeaders = new Headers(options?.headers as Record<string, string>)
       return Promise.resolve({
         ok: true,
         json: () => Promise.resolve({ code: 0, message: 'ok', data: {} }),
       })
     })
-    global.fetch = mockFetch
+    globalThis.fetch = mockFetch
 
     const { get } = await import('../api/index')
     await get('/api/sessions')
 
     expect(mockFetch).toHaveBeenCalled()
-    expect(capturedHeaders.get('Authorization')).toBe('Bearer test_token_123')
-    
+    expect(capturedHeaders?.get('Authorization')).toBe('Bearer test_token_123')
+
     localStorage.clear()
   })
 })
