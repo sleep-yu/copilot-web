@@ -45,6 +45,7 @@ export function ChatPage() {
 
   // 加载或创建当前会话
   const loadOrCreateSession = useCallback(async () => {
+    setIsLoading(true)
     try {
       // 尝试获取第一个会话
       const data = await getSessions(1, 1)
@@ -62,7 +63,14 @@ export function ChatPage() {
       try {
         const newSession = await createSession()
         setCurrentSession(newSession)
-      } catch {}
+      } catch {
+        // 第二重 fallback 也失败
+        setIsLoading(false)
+        setToast('加载会话失败，请刷新重试')
+        return
+      }
+    } finally {
+      setIsLoading(false)
     }
     await loadSessions()
   }, [loadSessions])
@@ -81,7 +89,7 @@ export function ChatPage() {
   }, [currentSession?.messages, scrollToBottom])
 
   // 发送消息
-  const sendMessage = async () => {
+  const sendMessage = useCallback(async () => {
     console.log('【DEBUG】sendMessage 被调用, input:', input)
     if (!input.trim() || isLoading || !currentSession) {
       console.log('【DEBUG】提前退出：input为空或正在加载或无会话')
@@ -95,8 +103,7 @@ export function ChatPage() {
       timestamp: Date.now()
     }
 
-    const newMessages = [...currentSession.messages, userMessage]
-    setCurrentSession({ ...currentSession, messages: newMessages })
+    setCurrentSession(prev => prev ? { ...prev, messages: [...prev.messages, userMessage] } : null)
     setInput('')
     setIsLoading(true)
 
@@ -124,23 +131,19 @@ export function ChatPage() {
         timestamp: Date.now()
       }
 
-      const finalMessages = [...newMessages, assistantMessage]
       // 保存标题内容（因为 input 后续会被清空）
       const newTitle = userMessage.content.slice(0, 20) || '新对话'
-      setCurrentSession({ ...currentSession, messages: finalMessages, title: newTitle })
+      setCurrentSession(prev => prev ? { ...prev, messages: [...prev.messages, userMessage, assistantMessage], title: newTitle } : null)
 
       // 更新会话标题（第一条用户消息后）
-      console.log('【DEBUG】newMessages.length:', newMessages.length, 'input已被清空为:', input)
-      if (newMessages.length === 1) {
-        console.log('【DEBUG】即将调用 updateSession，标题:', newTitle)
-        try {
-          await updateSession(currentSession.id, { title: newTitle })
-          console.log('【DEBUG】标题更新成功')
-          await loadSessions()
-          console.log('【DEBUG】会话列表已刷新')
-        } catch (err) {
-          console.error('【DEBUG】标题更新失败:', err)
-        }
+      console.log('【DEBUG】即将调用 updateSession，标题:', newTitle)
+      try {
+        await updateSession(currentSession.id, { title: newTitle })
+        console.log('【DEBUG】标题更新成功')
+        await loadSessions()
+        console.log('【DEBUG】会话列表已刷新')
+      } catch (err) {
+        console.error('【DEBUG】标题更新失败:', err)
       }
     } catch (error) {
       console.error('请求失败:', error)
@@ -150,11 +153,11 @@ export function ChatPage() {
         content: '❌ 请求失败，请检查后端是否运行',
         timestamp: Date.now()
       }
-      setCurrentSession({ ...currentSession, messages: [...newMessages, errorMessage] })
+      setCurrentSession(prev => prev ? { ...prev, messages: [...prev.messages, userMessage, errorMessage] } : null)
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [input, isLoading, currentSession, loadSessions])
 
   // 键盘事件
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
