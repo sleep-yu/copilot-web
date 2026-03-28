@@ -43,11 +43,12 @@ async function request<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const token = getToken()
-  
+  const hasBody = options.body != null;
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
     ...options,
     headers: {
-      'Content-Type': 'application/json',
+      ...(hasBody && { 'Content-Type': 'application/json' }),
       ...(token && { Authorization: `Bearer ${token}` }),
       ...options.headers,
     },
@@ -55,13 +56,12 @@ async function request<T>(
 
   const result = await response.json()
 
-  // 后端返回格式：{ errorCode: number, data: { code, message, data }, message?, data? }
-  // 统一错误检查：外层 errorCode > 0 或内层 data.code !== 0 都算错误
+  // 错误检查：HTTP 状态非 2xx，或 errorCode 存在且非 0（旧格式兼容 result.data?.code）
   const errorCode = result.errorCode ?? result.data?.code
   const errorMessage = result.message || result.data?.message || '请求失败'
-  
-  if (errorCode !== 0) {
-    throw new ApiError(errorMessage, errorCode || 500)
+
+  if (!response.ok || (errorCode !== undefined && errorCode !== 0)) {
+    throw new ApiError(errorMessage, errorCode || response.status)
   }
 
   return result.data?.data ?? result.data
