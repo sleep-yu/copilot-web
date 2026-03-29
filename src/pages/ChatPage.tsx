@@ -11,7 +11,6 @@ import {
   getSession,
   updateSession,
   deleteSession,
-  addMessage,
   streamMessage,
   type Session,
   type Message,
@@ -122,9 +121,8 @@ export function ChatPage() {
     }
 
     try {
-      // 流式请求
+      // 流式消费 SSE
       const response = await streamMessage(currentSession.id, userMessage.content)
-
       const reader = response.body!.getReader()
       const decoder = new TextDecoder()
       let buffer = ''
@@ -134,48 +132,48 @@ export function ChatPage() {
         if (done) break
 
         buffer += decoder.decode(value, { stream: true })
-        const lines = buffer.split('\n')
-        buffer = lines.pop() || ''
 
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue
-          const data = JSON.parse(line.slice(6))
+        // SSE 事件用 \n\n 分隔，逐事件处理
+        while (buffer.includes('\n\n')) {
+          const eventEnd = buffer.indexOf('\n\n')
+          const rawLine = buffer.slice(0, eventEnd)
+          buffer = buffer.slice(eventEnd + 2)
+
+          if (!rawLine.startsWith('data: ')) continue
+          let data
+          try {
+            data = JSON.parse(rawLine.slice(6))
+          } catch {
+            continue // 解析失败跳过这一事件
+          }
 
           if (data.done || data.error) {
-            // 流结束
             if (data.error) {
               setCurrentSession(prev =>
-                prev
-                  ? {
-                      ...prev,
-                      messages: prev.messages.map(m =>
-                        m.id === 'ai-placeholder'
-                          ? { ...m, id: data.id || m.id, content: data.content || '抱歉，服务暂时不可用。' }
-                          : m
-                      ),
-                    }
-                  : null
+                prev ? {
+                  ...prev,
+                  messages: prev.messages.map(m =>
+                    m.id === 'ai-placeholder'
+                      ? { ...m, id: data.id || m.id, content: data.content || '抱歉，服务暂时不可用。' }
+                      : m
+                  ),
+                } : null
               )
             }
             break
           }
 
-          // 实时更新 AI 消息（直接覆盖，不是拼接）
           setCurrentSession(prev =>
-            prev
-              ? {
-                  ...prev,
-                  messages: prev.messages.map(m =>
-                    m.id === 'ai-placeholder'
-                      ? { ...m, id: data.id || m.id, content: data.content }
-                      : m
-                  ),
-                }
-              : null
+            prev ? {
+              ...prev,
+              messages: prev.messages.map(m =>
+                m.id === 'ai-placeholder'
+                  ? { ...m, id: data.id || m.id, content: data.content }
+                  : m
+              ),
+            } : null
           )
         }
-
-        if (buffer.trim() === 'data: {"done":true}') break
       }
 
       // 更新会话标题（第一条用户消息后）
