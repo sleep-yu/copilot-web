@@ -93,8 +93,3 @@ export async function addMessage(
 ): Promise<AddMessageResponse> {
   return post<AddMessageResponse>(`/api/sessions/${sessionId}/messages`, data)
 }
-
-// 清空消息
-export async function clearMessages(sessionId: string): Promise<void> {
-  return del<void>(`/api/sessions/${sessionId}/messages`)
-}
