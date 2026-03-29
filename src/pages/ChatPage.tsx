@@ -12,6 +12,7 @@ import {
   updateSession,
   deleteSession,
   addMessage,
+  streamMessage,
   type Session,
   type Message,
   type SessionListItem,
@@ -88,7 +89,7 @@ export function ChatPage() {
     scrollToBottom()
   }, [currentSession?.messages, scrollToBottom])
 
-  // 发送消息
+  // 发送消息（流式）
   const sendMessage = useCallback(async () => {
     console.log('【DEBUG】sendMessage 被调用, input:', input)
     if (!input.trim() || isLoading || !currentSession) {
@@ -100,10 +101,19 @@ export function ChatPage() {
       id: 'msg-' + Date.now(),
       role: 'user',
       content: input.trim(),
-      timestamp: Date.now()
+      timestamp: Date.now(),
     }
 
-    setCurrentSession(prev => prev ? { ...prev, messages: [...prev.messages, userMessage] } : null)
+    const assistantMessage: Message = {
+      id: 'ai-placeholder',
+      role: 'assistant',
+      content: '',
+      timestamp: Date.now(),
+    }
+
+    setCurrentSession(prev =>
+      prev ? { ...prev, messages: [...prev.messages, userMessage, assistantMessage] } : null
+    )
     setInput('')
     setIsLoading(true)
 
@@ -112,48 +122,85 @@ export function ChatPage() {
     }
 
     try {
-      // 调用封装好的 addMessage API
-      const result = await addMessage(currentSession.id, {
-        role: 'user',
-        content: userMessage.content
-      })
+      // 流式请求
+      const response = await streamMessage(currentSession.id, userMessage.content)
 
-      // 提取 AI 回复内容
-      let assistantContent = '无回复'
-      if (result.assistant?.content) {
-        assistantContent = result.assistant.content
+      const reader = response.body!.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue
+          const data = JSON.parse(line.slice(6))
+
+          if (data.done || data.error) {
+            // 流结束
+            if (data.error) {
+              setCurrentSession(prev =>
+                prev
+                  ? {
+                      ...prev,
+                      messages: prev.messages.map(m =>
+                        m.id === 'ai-placeholder'
+                          ? { ...m, id: data.id || m.id, content: data.content || '抱歉，服务暂时不可用。' }
+                          : m
+                      ),
+                    }
+                  : null
+              )
+            }
+            break
+          }
+
+          // 实时更新 AI 消息（直接覆盖，不是拼接）
+          setCurrentSession(prev =>
+            prev
+              ? {
+                  ...prev,
+                  messages: prev.messages.map(m =>
+                    m.id === 'ai-placeholder'
+                      ? { ...m, id: data.id || m.id, content: data.content }
+                      : m
+                  ),
+                }
+              : null
+          )
+        }
+
+        if (buffer.trim() === 'data: {"done":true}') break
       }
-
-      const assistantMessage: Message = {
-        id: 'msg-' + (Date.now() + 1),
-        role: 'assistant',
-        content: assistantContent,
-        timestamp: Date.now()
-      }
-
-      // 保存标题内容（因为 input 后续会被清空）
-      const newTitle = userMessage.content.slice(0, 20) || '新对话'
-      setCurrentSession(prev => prev ? { ...prev, messages: [...prev.messages, userMessage, assistantMessage], title: newTitle } : null)
 
       // 更新会话标题（第一条用户消息后）
-      console.log('【DEBUG】即将调用 updateSession，标题:', newTitle)
+      const newTitle = userMessage.content.slice(0, 20) || '新对话'
+      setCurrentSession(prev => (prev ? { ...prev, title: newTitle } : null))
       try {
         await updateSession(currentSession.id, { title: newTitle })
-        console.log('【DEBUG】标题更新成功')
         await loadSessions()
-        console.log('【DEBUG】会话列表已刷新')
       } catch (err) {
-        console.error('【DEBUG】标题更新失败:', err)
+        console.error('标题更新失败:', err)
       }
     } catch (error) {
       console.error('请求失败:', error)
-      const errorMessage: Message = {
-        id: 'msg-' + (Date.now() + 1),
-        role: 'assistant',
-        content: '❌ 请求失败，请检查后端是否运行',
-        timestamp: Date.now()
-      }
-      setCurrentSession(prev => prev ? { ...prev, messages: [...prev.messages, userMessage, errorMessage] } : null)
+      setCurrentSession(prev =>
+        prev
+          ? {
+              ...prev,
+              messages: prev.messages.map(m =>
+                m.id === 'ai-placeholder'
+                  ? { ...m, id: 'msg-' + (Date.now() + 1), content: '❌ 请求失败，请检查后端是否运行' }
+                  : m
+              ),
+            }
+          : null
+      )
     } finally {
       setIsLoading(false)
     }

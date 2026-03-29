@@ -80,13 +80,25 @@ export async function deleteSession(id: string): Promise<void> {
   return del<void>(`/api/sessions/${id}`)
 }
 
-// 添加消息响应类型（用户消息会同时返回 AI 回复）
+// 添加消息响应类型
 export interface AddMessageResponse {
   user: Message
-  assistant?: Message  // 用户消息时返回，助手消息时不返回
+  assistant?: Message
 }
 
-// 添加消息
+// 流式发送消息，返回原始 Response（供 ReadableStream 使用）
+export function streamMessage(sessionId: string, content: string): Promise<Response> {
+  return fetch(`/api/sessions/${sessionId}/messages`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ content }),
+  })
+}
+
+// 添加消息（非流式，保留用于兼容）
 export async function addMessage(
   sessionId: string,
   data: { role: 'user' | 'assistant'; content: string }
