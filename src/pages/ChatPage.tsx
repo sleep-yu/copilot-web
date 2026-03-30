@@ -177,7 +177,7 @@ export function ChatPage() {
               } : null
             )
           } else {
-            // 后续内容：更新现有消息（保留 thinking 字段）
+            // 后续内容：更新现有消息
             setCurrentSession(prev =>
               prev ? {
                 ...prev,
@@ -203,9 +203,6 @@ export function ChatPage() {
               } : null
             )
           }
-
-          // DEBUG: 打印 thinking 字段
-          console.log('[SSE DEBUG] id:', data.id, 'thinking:', data.thinking, 'content len:', (data.content || '').length)
         }
       }
 
