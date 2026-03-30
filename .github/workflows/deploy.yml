@@ -5,34 +5,22 @@ on:
     branches: [main]
 
 jobs:
-  deploy:
+  test-scp:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Package source code
+      - name: Setup SSH
         run: |
-          tar --exclude='.git' --exclude='node_modules' --exclude='dist' --exclude='.github' \
-            -czf copilot-web-src.tar.gz .
+          mkdir -p ~/.ssh
+          echo '${{ secrets.SERVER_SSH_KEY }}' > ~/.ssh/ssh_key
+          chmod 600 ~/.ssh/ssh_key
+          ssh-keyscan -H -p ${{ secrets.SERVER_PORT }} ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
 
-      - name: Deploy to server via SSH
-        uses: appleboy/ssh-action@v0.1.10
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          port: ${{ secrets.SERVER_PORT }}
-          timeout: 5m
-          upload_files: |
-            copilot-web-src.tar.gz
-          target: /www/wwwroot/copilot-web/
-          command: |
-            cd /www/wwwroot/copilot-web
-            ls -la copilot-web-src.tar.gz
-            tar -xzf copilot-web-src.tar.gz --strip-components=1
-            rm -f copilot-web-src.tar.gz
-            export PATH="/usr/local/bin:/usr/bin"
-            npm install
-            npm run build
-            echo "Frontend deployed successfully!"
+      - name: Test scp
+        run: |
+          echo "hello world" > /tmp/test.txt
+          scp -P ${{ secrets.SERVER_PORT }} -o StrictHostKeyChecking=no \
+            /tmp/test.txt ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/tmp/test.txt
+          echo "SCP_TEST_SUCCESS"
