@@ -11,32 +11,27 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Package source code
-        run: zip -r copilot-web.zip . -x ".git/*" -x "node_modules/*" -x "dist/*" -x "copilot-web.zip"
+      - name: Install rsync
+        run: sudo apt-get update && sudo apt-get install -y rsync openssh-client
 
-      - name: Deploy to server via SSH
-        uses: appleboy/ssh-action@v0.1.10
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          port: ${{ secrets.SERVER_PORT }}
-          timeout: 5m
-          upload_files: |
-            copilot-web.zip
-          target: /www/wwwroot/copilot-web/
-          command: |
-            set -x
-            export PATH="/usr/local/bin:/usr/bin:$HOME/.nvm/versions/node/v20.18.0/bin:$PATH"
-            cd /www/wwwroot/copilot-web
-            pwd
-            ls -la copilot-web.zip 2>/dev/null && echo "ZIP_EXISTS" || echo "ZIP_MISSING"
-            if [ -f copilot-web.zip ]; then
-              echo "Extracting zip..."
-              unzip -o copilot-web.zip && echo "UNZIP_SUCCESS" || echo "UNZIP_FAILED"
-              rm -f copilot-web.zip
-            fi
-            ls src/pages/Login.tsx 2>/dev/null && grep '<h1>' src/pages/Login.tsx || echo "FILE_MISSING"
-            npm install 2>&1 | tail -3
-            npm run build 2>&1 | tail -5
-            echo "DEPLOY_DONE"
+      - name: Deploy to server via rsync
+        env:
+          RSYNC_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
+        run: |
+          # 添加 SSH key 到 ssh-agent
+          mkdir -p ~/.ssh
+          echo "$RSYNC_SSH_KEY" | tr -d '\r' > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H -p ${{ secrets.SERVER_PORT }} ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+          # 同步源码到服务器（排除 node_modules 和 dist）
+          rsync -az --exclude='.git' --exclude='node_modules' --exclude='dist' --exclude='.github' \
+            -e "ssh -p ${{ secrets.SERVER_PORT }}" \
+            ./ \
+            ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:/www/wwwroot/copilot-web/
+          # 在服务器上安装依赖并构建
+          ssh -p ${{ secrets.SERVER_PORT }} ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }} \
+            'export PATH="/usr/local/bin:/usr/bin:$HOME/.nvm/versions/node/v20.18.0/bin:$PATH" && \
+             cd /www/wwwroot/copilot-web && \
+             npm install && \
+             npm run build && \
+             echo "Frontend deployed successfully!"'
