@@ -44,7 +44,7 @@ jobs:
           port: ${{ secrets.SERVER_PORT }}
           timeout: 5m
           command: |
-            export PATH="/usr/local/bin:/usr/bin"
+            export PATH="/usr/local/node-v20.19.0-linux-x64/bin:/usr/local/bin:/usr/bin"
             cd /www/wwwroot/copilot-web
             base64 -d /tmp/src.b64 | tar -xzf - --strip-components=1
             rm -f /tmp/src.b64
