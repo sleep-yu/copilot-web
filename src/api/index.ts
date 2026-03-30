@@ -1,7 +1,7 @@
 // API 基础配置
 // 读取环境变量 VITE_API_BASE_URL，未配置时仅本地开发使用 fallback
 // 生产环境请配置 .env.production 或在 CI/CD 中注入环境变量
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:62345'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 const TOKEN_KEY = 'copilot_token'
 
 // 获取 Token
