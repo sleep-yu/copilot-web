@@ -18,8 +18,9 @@ jobs:
           username: ${{ secrets.SERVER_USER }}
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT }}
+          timeout: 5m
           command: |
-            export PATH="/usr/local/bin:/usr/bin:/bin:$HOME/.nvm/versions/node/v20.18.0/bin:\$PATH"
+            export PATH="/usr/local/bin:/usr/bin:/bin:$HOME/.nvm/versions/node/v20.18.0/bin:$PATH"
             cd /www/wwwroot/copilot-web
             git pull origin main
             npm install
