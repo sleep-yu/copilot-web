@@ -1,5 +1,5 @@
 // 认证 API
-import { post, get } from './index'
+import { post, get, put } from './index'
 
 // 用户信息
 export interface UserInfo {
@@ -7,6 +7,7 @@ export interface UserInfo {
   email: string
   nickname?: string
   avatar?: string
+  enableThinking?: boolean
 }
 
 // 注册请求
@@ -27,6 +28,7 @@ export interface RegisterResponse {
   userId: string
   email: string
   nickname?: string
+  enableThinking?: boolean
   token: string  // 新增：注册后直接返回 token
 }
 
@@ -54,4 +56,9 @@ export async function getCurrentUser(): Promise<UserInfo> {
 // 登出
 export async function logout(): Promise<{ message: string }> {
   return post<{ message: string }>('/api/auth/logout')
+}
+
+// 更新用户设置
+export async function updateSettings(settings: { enableThinking: boolean }): Promise<{ enableThinking: boolean }> {
+  return put<{ enableThinking: boolean }>('/api/auth/settings', settings)
 }

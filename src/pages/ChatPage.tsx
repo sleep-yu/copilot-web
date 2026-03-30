@@ -19,7 +19,7 @@ import {
 import './ChatPage.css'
 
 export function ChatPage() {
-  const { user, logout, theme, toggleTheme } = useAuth()
+  const { user, logout, theme, toggleTheme, updateUserSettings } = useAuth()
   const [sessions, setSessions] = useState<SessionListItem[]>([])
   const [currentSession, setCurrentSession] = useState<Session | null>(null)
   const [input, setInput] = useState('')
@@ -27,7 +27,7 @@ export function ChatPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [isLoadingSessions, setIsLoadingSessions] = useState(true)
-  const [enableThinking, setEnableThinking] = useState(true)
+  const [enableThinking, setEnableThinking] = useState(user?.enableThinking ?? true)
   const [thinkingVisible, setThinkingVisible] = useState<Record<string, boolean>>({})
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -80,6 +80,15 @@ export function ChatPage() {
   useEffect(() => {
     loadOrCreateSession()
   }, [loadOrCreateSession])
+
+  // 从用户信息初始化 enableThinking
+  useEffect(() => {
+    if (user) {
+      setEnableThinking(user.enableThinking ?? true)
+    } else {
+      setEnableThinking(true)
+    }
+  }, [user])
 
   // 自动滚动
   const scrollToBottom = useCallback(() => {
@@ -231,7 +240,7 @@ export function ChatPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [input, isLoading, currentSession, loadSessions])
+  }, [input, isLoading, currentSession, loadSessions, enableThinking])
 
   // 键盘事件
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -504,7 +513,16 @@ export function ChatPage() {
               <input
                 type="checkbox"
                 checked={enableThinking}
-                onChange={(e) => setEnableThinking(e.target.checked)}
+                onChange={async (e) => {
+                  const checked = e.target.checked
+                  setEnableThinking(checked)
+                  try {
+                    await updateUserSettings({ enableThinking: checked })
+                  } catch (error) {
+                    console.error('更新设置失败:', error)
+                    setEnableThinking(!checked)
+                  }
+                }}
                 className="thinking-switch"
               />
             </div>

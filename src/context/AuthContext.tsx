@@ -13,6 +13,7 @@ interface AuthContextType {
   registerWithToken: (email: string, password: string, nickname?: string) => Promise<void>
   logout: () => Promise<void>
   checkAuth: () => Promise<void>
+  updateUserSettings: (settings: { enableThinking: boolean }) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -89,6 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       userId: result.userId,
       email: result.email,
       nickname: result.nickname,
+      enableThinking: result.enableThinking ?? true,
     })
   }, [])
 
@@ -103,6 +105,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
+  // 更新用户设置
+  const updateUserSettings = useCallback(async (settings: { enableThinking: boolean }) => {
+    const { updateSettings } = await import('../api/auth')
+    await updateSettings(settings)
+    setUser(prev => prev ? { ...prev, enableThinking: settings.enableThinking } : null)
+  }, [])
+
   return (
     <AuthContext.Provider
       value={{
@@ -115,6 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         registerWithToken,
         logout,
         checkAuth,
+        updateUserSettings,
       }}
     >
       {children}
