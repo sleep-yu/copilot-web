@@ -11,33 +11,28 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup SSH key for runner
-        run: |
-          mkdir -p ~/.ssh
-          chmod 700 ~/.ssh
-          ssh-keyscan -H -p $SERVER_PORT $SERVER_HOST >> ~/.ssh/known_hosts 2>/dev/null
-          tee ~/.ssh/id_ed25519 << 'ENDSSHKEY'
-${{ secrets.SERVER_SSH_KEY }}
-ENDSSHKEY
-          chmod 600 ~/.ssh/id_ed25519
-        env:
-          SERVER_HOST: ${{ secrets.SERVER_HOST }}
-          SERVER_PORT: ${{ secrets.SERVER_PORT }}
-
-      - name: Sync source code to server
+      - name: Package source code
         run: |
           tar --exclude='.git' --exclude='node_modules' --exclude='dist' --exclude='.github' \
-            -czf /tmp/copilot-web-src.tar.gz .
-          scp -P $SERVER_PORT -o StrictHostKeyChecking=no \
-            /tmp/copilot-web-src.tar.gz \
-            $SERVER_USER@$SERVER_HOST:/tmp/
-          rm -f /tmp/copilot-web-src.tar.gz
-          ssh -p $SERVER_PORT -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST \
-            'cd /www/wwwroot/copilot-web && tar -xzf /tmp/copilot-web-src.tar.gz --strip-components=1 && rm -f /tmp/copilot-web-src.tar.gz && \
-             export PATH="/usr/local/bin:/usr/bin" && \
-             npm install && npm run build && \
-             echo "Frontend deployed successfully!"'
-        env:
-          SERVER_USER: ${{ secrets.SERVER_USER }}
-          SERVER_HOST: ${{ secrets.SERVER_HOST }}
-          SERVER_PORT: ${{ secrets.SERVER_PORT }}
+            -czf copilot-web-src.tar.gz .
+
+      - name: Deploy to server via SSH
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT }}
+          timeout: 5m
+          upload_files: |
+            copilot-web-src.tar.gz
+          target: /www/wwwroot/copilot-web/
+          command: |
+            cd /www/wwwroot/copilot-web
+            ls -la copilot-web-src.tar.gz
+            tar -xzf copilot-web-src.tar.gz --strip-components=1
+            rm -f copilot-web-src.tar.gz
+            export PATH="/usr/local/bin:/usr/bin"
+            npm install
+            npm run build
+            echo "Frontend deployed successfully!"
