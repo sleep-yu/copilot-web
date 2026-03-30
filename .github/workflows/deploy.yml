@@ -14,28 +14,29 @@ jobs:
       - name: Setup SSH key for runner
         run: |
           mkdir -p ~/.ssh
-          echo "$SERVER_SSH_KEY" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
+          chmod 700 ~/.ssh
           ssh-keyscan -H -p $SERVER_PORT $SERVER_HOST >> ~/.ssh/known_hosts 2>/dev/null
+          tee ~/.ssh/id_ed25519 << 'ENDSSHKEY'
+${{ secrets.SERVER_SSH_KEY }}
+ENDSSHKEY
+          chmod 600 ~/.ssh/id_ed25519
         env:
-          SERVER_SSH_KEY: ${{ secrets.SERVER_SSH_KEY }}
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
           SERVER_PORT: ${{ secrets.SERVER_PORT }}
 
-      - name: Sync source code to server via scp
+      - name: Sync source code to server
         run: |
-          # 打包源码（排除 node_modules 和 dist）
           tar --exclude='.git' --exclude='node_modules' --exclude='dist' --exclude='.github' \
             -czf /tmp/copilot-web-src.tar.gz .
-          # 通过 SSH 传输到服务器
-          scp -P $SERVER_PORT -o StrictHostKeyChecking=no /tmp/copilot-web-src.tar.gz \
+          scp -P $SERVER_PORT -o StrictHostKeyChecking=no \
+            /tmp/copilot-web-src.tar.gz \
             $SERVER_USER@$SERVER_HOST:/tmp/
-          # SSH 到服务器解压覆盖源码
+          rm -f /tmp/copilot-web-src.tar.gz
           ssh -p $SERVER_PORT -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST \
-            "cd /www/wwwroot/copilot-web && tar -xzf /tmp/copilot-web-src.tar.gz --strip-components=1 && rm -f /tmp/copilot-web-src.tar.gz && \
-             export PATH='/usr/local/bin:/usr/bin' && \
+            'cd /www/wwwroot/copilot-web && tar -xzf /tmp/copilot-web-src.tar.gz --strip-components=1 && rm -f /tmp/copilot-web-src.tar.gz && \
+             export PATH="/usr/local/bin:/usr/bin" && \
              npm install && npm run build && \
-             echo 'Frontend deployed successfully!'"
+             echo "Frontend deployed successfully!"'
         env:
           SERVER_USER: ${{ secrets.SERVER_USER }}
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
