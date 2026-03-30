@@ -40,10 +40,10 @@ export function Login() {
         <div className="auth-header">
           <div className="auth-logo">
             <svg viewBox="0 0 24 24">
-              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+              <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
             </svg>
           </div>
-          <h1>Copilot AI 助手 FINAL</h1>
+          <h1>Copilot AI 助手</h1>
           <p>欢迎回来！</p>
         </div>
 
@@ -55,8 +55,8 @@ export function Login() {
             <div className="input-wrapper-icon">
               <span className="input-icon">
                 <svg viewBox="0 0 24 24">
-                  <rect x="2" y="4" width="20" height="16" rx="2"/>
-                  <path d="M2 7l10 6 10-6"/>
+                  <rect x="2" y="4" width="20" height="16" rx="2" />
+                  <path d="M2 7l10 6 10-6" />
                 </svg>
               </span>
               <input
@@ -75,8 +75,8 @@ export function Login() {
             <div className="input-wrapper-icon">
               <span className="input-icon">
                 <svg viewBox="0 0 24 24">
-                  <rect x="3" y="11" width="18" height="11" rx="2"/>
-                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                  <rect x="3" y="11" width="18" height="11" rx="2" />
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                 </svg>
               </span>
               <input
