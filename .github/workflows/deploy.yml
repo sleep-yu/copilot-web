@@ -48,6 +48,7 @@ jobs:
             cd /www/wwwroot/copilot-web
             base64 -d /tmp/src.b64 | tar -xzf - --strip-components=1
             rm -f /tmp/src.b64
+            rm -rf node_modules package-lock.json
             npm install
             npm run build
             echo "Frontend deployed successfully!"
