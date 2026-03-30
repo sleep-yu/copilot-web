@@ -84,3 +84,79 @@
 .theme-toggle-btn:hover {
   background: var(--bg-secondary);
 }
+
+/* 深度思考开关 */
+.thinking-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.thinking-switch {
+  width: 36px;
+  height: 20px;
+  appearance: none;
+  background: var(--border-color);
+  border-radius: 10px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.thinking-switch:checked {
+  background: var(--accent-color, #4a9eff);
+}
+
+.thinking-switch::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  background: white;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+  transition: transform 0.2s;
+}
+
+.thinking-switch:checked::after {
+  transform: translateX(16px);
+}
+
+/* AI 思考内容展示 */
+.thinking-box {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.thinking-box:hover {
+  background: var(--bg-hover);
+}
+
+.thinking-icon {
+  font-size: 14px;
+}
+
+.thinking-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.thinking-text.expanded {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
