@@ -1,5 +1,5 @@
 // 会话 API
-import { get, post, put, del } from './index'
+import { get, post, put, del, getToken } from './index'
 
 // 消息类型
 export interface Message {
@@ -91,7 +91,7 @@ export function streamMessage(sessionId: string, content: string): Promise<Respo
   return fetch(`/api/sessions/${sessionId}/messages`, {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${localStorage.getItem('token') || ''}`,
+      'Authorization': `Bearer ${getToken() || ''}`,
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({ content }),

@@ -103,15 +103,8 @@ export function ChatPage() {
       timestamp: Date.now(),
     }
 
-    const assistantMessage: Message = {
-      id: 'ai-placeholder',
-      role: 'assistant',
-      content: '',
-      timestamp: Date.now(),
-    }
-
     setCurrentSession(prev =>
-      prev ? { ...prev, messages: [...prev.messages, userMessage, assistantMessage] } : null
+      prev ? { ...prev, messages: [...prev.messages, userMessage] } : null
     )
     setInput('')
     setIsLoading(true)
@@ -126,6 +119,7 @@ export function ChatPage() {
       const reader = response.body!.getReader()
       const decoder = new TextDecoder()
       let buffer = ''
+      let assistantMessageId: string | null = null
 
       while (true) {
         const { done, value } = await reader.read()
@@ -144,7 +138,7 @@ export function ChatPage() {
           try {
             data = JSON.parse(rawLine.slice(6))
           } catch {
-            continue // 解析失败跳过这一事件
+            continue
           }
 
           if (data.done || data.error) {
@@ -152,27 +146,46 @@ export function ChatPage() {
               setCurrentSession(prev =>
                 prev ? {
                   ...prev,
-                  messages: prev.messages.map(m =>
-                    m.id === 'ai-placeholder'
-                      ? { ...m, id: data.id || m.id, content: data.content || '抱歉，服务暂时不可用。' }
-                      : m
-                  ),
+                  messages: [...prev.messages, {
+                    id: 'msg-error-' + Date.now(),
+                    role: 'assistant',
+                    content: data.content || '抱歉，服务暂时不可用。',
+                    timestamp: Date.now()
+                  }]
                 } : null
               )
             }
             break
           }
 
-          setCurrentSession(prev =>
-            prev ? {
-              ...prev,
-              messages: prev.messages.map(m =>
-                m.id === 'ai-placeholder'
-                  ? { ...m, id: data.id || m.id, content: data.content }
-                  : m
-              ),
-            } : null
-          )
+          // 首次收到内容：创建新消息并隐藏 typing indicator
+          if (!assistantMessageId) {
+            assistantMessageId = data.id
+            setIsLoading(false)  // 关键：立即隐藏三个点
+            setCurrentSession(prev =>
+              prev ? {
+                ...prev,
+                messages: [...prev.messages, {
+                  id: data.id,
+                  role: 'assistant',
+                  content: data.content,
+                  timestamp: Date.now()
+                }]
+              } : null
+            )
+          } else {
+            // 后续内容：更新现有消息
+            setCurrentSession(prev =>
+              prev ? {
+                ...prev,
+                messages: prev.messages.map(m =>
+                  m.id === assistantMessageId
+                    ? { ...m, content: data.content }
+                    : m
+                )
+              } : null
+            )
+          }
         }
       }
 
@@ -188,16 +201,15 @@ export function ChatPage() {
     } catch (error) {
       console.error('请求失败:', error)
       setCurrentSession(prev =>
-        prev
-          ? {
-              ...prev,
-              messages: prev.messages.map(m =>
-                m.id === 'ai-placeholder'
-                  ? { ...m, id: 'msg-' + (Date.now() + 1), content: '❌ 请求失败，请检查后端是否运行' }
-                  : m
-              ),
-            }
-          : null
+        prev ? {
+          ...prev,
+          messages: [...prev.messages, {
+            id: 'msg-error-' + Date.now(),
+            role: 'assistant',
+            content: '❌ 请求失败，请检查后端是否运行',
+            timestamp: Date.now()
+          }]
+        } : null
       )
     } finally {
       setIsLoading(false)
