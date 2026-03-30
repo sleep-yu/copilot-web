@@ -27,6 +27,8 @@ export function ChatPage() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const [isLoadingSessions, setIsLoadingSessions] = useState(true)
+  const [enableThinking, setEnableThinking] = useState(true)
+  const [thinkingVisible, setThinkingVisible] = useState<Record<string, boolean>>({})
 
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -115,7 +117,7 @@ export function ChatPage() {
 
     try {
       // 流式消费 SSE
-      const response = await streamMessage(currentSession.id, userMessage.content)
+      const response = await streamMessage(currentSession.id, userMessage.content, enableThinking)
       const reader = response.body!.getReader()
       const decoder = new TextDecoder()
       let buffer = ''
@@ -168,7 +170,8 @@ export function ChatPage() {
                 messages: [...prev.messages, {
                   id: data.id,
                   role: 'assistant',
-                  content: data.content,
+                  content: data.content || '',
+                  thinking: data.thinking,
                   timestamp: Date.now()
                 }]
               } : null
@@ -181,6 +184,20 @@ export function ChatPage() {
                 messages: prev.messages.map(m =>
                   m.id === assistantMessageId
                     ? { ...m, content: data.content }
+                    : m
+                )
+              } : null
+            )
+          }
+
+          // 收到 thinking update
+          if (data.thinking !== undefined) {
+            setCurrentSession(prev =>
+              prev ? {
+                ...prev,
+                messages: prev.messages.map(m =>
+                  m.id === assistantMessageId
+                    ? { ...m, thinking: data.thinking }
                     : m
                 )
               } : null
@@ -263,6 +280,11 @@ export function ChatPage() {
   const showToast = (message: string) => {
     setToast(message)
     setTimeout(() => setToast(null), 2000)
+  }
+
+  // 切换 thinking 展开/折叠
+  const toggleThinking = (msgId: string) => {
+    setThinkingVisible(prev => ({ ...prev, [msgId]: !prev[msgId] }))
   }
 
   // 新建会话
@@ -417,6 +439,14 @@ export function ChatPage() {
                 </div>
                 <div className="message-content">
                   <div className="message-bubble">
+                    {msg.role === 'assistant' && msg.thinking && (
+                      <div className="thinking-box" onClick={() => toggleThinking(msg.id)}>
+                        <span className="thinking-icon">🤔</span>
+                        <span className={`thinking-text ${thinkingVisible[msg.id] ? 'expanded' : ''}`}>
+                          {thinkingVisible[msg.id] ? msg.thinking : '点击查看 AI 思考过程'}
+                        </span>
+                      </div>
+                    )}
                     {msg.role === 'assistant' ? (
                       <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
@@ -469,6 +499,15 @@ export function ChatPage() {
           </div>
 
           <div className="input-area">
+            <div className="thinking-toggle">
+              <span>深度思考</span>
+              <input
+                type="checkbox"
+                checked={enableThinking}
+                onChange={(e) => setEnableThinking(e.target.checked)}
+                className="thinking-switch"
+              />
+            </div>
             <div className="input-wrapper">
               <textarea
                 ref={textareaRef}

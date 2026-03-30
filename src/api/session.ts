@@ -6,6 +6,7 @@ export interface Message {
   id: string
   role: 'user' | 'assistant'
   content: string
+  thinking?: string
   timestamp: number
 }
 
@@ -87,14 +88,14 @@ export interface AddMessageResponse {
 }
 
 // 流式发送消息，返回原始 Response（供 ReadableStream 使用）
-export function streamMessage(sessionId: string, content: string): Promise<Response> {
+export function streamMessage(sessionId: string, content: string, enableThinking: boolean = true): Promise<Response> {
   return fetch(`/api/sessions/${sessionId}/messages`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${getToken() || ''}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ content }),
+    body: JSON.stringify({ content, enableThinking }),
   })
 }
 
