@@ -14,7 +14,7 @@ jobs:
       - name: Setup SSH key for runner
         run: |
           mkdir -p ~/.ssh
-          echo "$SERVER_SSH_KEY" | tr -d '\r' > ~/.ssh/id_ed25519
+          echo "$SERVER_SSH_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H -p $SERVER_PORT $SERVER_HOST >> ~/.ssh/known_hosts 2>/dev/null
         env:
@@ -22,27 +22,21 @@ jobs:
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
           SERVER_PORT: ${{ secrets.SERVER_PORT }}
 
-      - name: Sync source code to server
+      - name: Sync source code to server via scp
         run: |
-          rsync -az --exclude='.git' --exclude='node_modules' --exclude='dist' --exclude='.github' \
-            -e "ssh -p $SERVER_PORT -o StrictHostKeyChecking=no" \
-            ./ $SERVER_USER@$SERVER_HOST:/www/wwwroot/copilot-web/
+          # 打包源码（排除 node_modules 和 dist）
+          tar --exclude='.git' --exclude='node_modules' --exclude='dist' --exclude='.github' \
+            -czf /tmp/copilot-web-src.tar.gz .
+          # 通过 SSH 传输到服务器
+          scp -P $SERVER_PORT -o StrictHostKeyChecking=no /tmp/copilot-web-src.tar.gz \
+            $SERVER_USER@$SERVER_HOST:/tmp/
+          # SSH 到服务器解压覆盖源码
+          ssh -p $SERVER_PORT -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_HOST \
+            "cd /www/wwwroot/copilot-web && tar -xzf /tmp/copilot-web-src.tar.gz --strip-components=1 && rm -f /tmp/copilot-web-src.tar.gz && \
+             export PATH='/usr/local/bin:/usr/bin' && \
+             npm install && npm run build && \
+             echo 'Frontend deployed successfully!'"
         env:
           SERVER_USER: ${{ secrets.SERVER_USER }}
           SERVER_HOST: ${{ secrets.SERVER_HOST }}
           SERVER_PORT: ${{ secrets.SERVER_PORT }}
-
-      - name: Build on server via SSH
-        uses: appleboy/ssh-action@v0.1.10
-        with:
-          host: ${{ secrets.SERVER_HOST }}
-          username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
-          port: ${{ secrets.SERVER_PORT }}
-          timeout: 5m
-          command: |
-            export PATH="/usr/local/bin:/usr/bin:$HOME/.nvm/versions/node/v20.18.0/bin:$PATH"
-            cd /www/wwwroot/copilot-web
-            npm install
-            npm run build
-            echo "Frontend deployed successfully!"
