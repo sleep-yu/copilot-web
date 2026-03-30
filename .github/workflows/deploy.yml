@@ -12,7 +12,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Package source code
-        run: tar -czf copilot-web.tar.gz .
+        run: zip -r /tmp/copilot-web.zip . -x ".git/*" -x "node_modules/*" -x "dist/*"
 
       - name: Deploy to server via SSH
         uses: appleboy/ssh-action@v0.1.10
@@ -23,15 +23,15 @@ jobs:
           port: ${{ secrets.SERVER_PORT }}
           timeout: 5m
           upload_files: |
-            copilot-web.tar.gz
+            /tmp/copilot-web.zip
           target: /www/wwwroot/copilot-web/
           command: |
             export PATH="/usr/local/bin:/usr/bin:$HOME/.nvm/versions/node/v20.18.0/bin:$PATH"
             cd /www/wwwroot/copilot-web
             # 解压覆盖源码
-            tar -xzf copilot-web.tar.gz
+            unzip -o /tmp/copilot-web.zip
             # 安装依赖 + 构建
             npm install
             npm run build
-            rm -f copilot-web.tar.gz
+            rm -f /tmp/copilot-web.zip
             echo "Frontend deployed successfully!"
